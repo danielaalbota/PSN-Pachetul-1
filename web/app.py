@@ -6,8 +6,5 @@ app = Flask(__name__)
 def home():
     return "Serverul merge!"
 
-if __name__ == '__main__':
+if __name__ == '_main_':
     app.run(debug=True)
-
-
-    
