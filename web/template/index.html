@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem de monitorizare</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        /* Temperatura */
+        .temp-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+
+        .temp-value span {
+            font-size: 1.5rem;
+            color: #888;
+        }
+
+        /* LED */
+        .led-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .led-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #333;
+            transition: background 0.3s;
+        }
+
+        .led-dot.on {
+            background: #ffeb3b;
+            box-shadow: 0 0 12px #ffeb3b;
+        }
+
+        .led-label {
+            font-size: 1rem;
+            color: #ccc;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.85; }
+
+        .btn-on { background: #ffeb3b; color: #111; }
+        .btn-off { background: #2a2d3a; color: #ccc; border: 1px solid #3a3d4a; }
+
+        /* Mesaje */
+        .message-input-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            background: #0f1117;
+            border: 1px solid #2a2d3a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus { border-color: #4fc3f7; }
+
+        .btn-send { background: #4fc3f7; color: #111; flex: 0 0 auto; }
+
+        .messages-list {
+            list-style: none;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .messages-list li {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #2a2d3a;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        .messages-list li:last-child { border-bottom: none; }
+
+        .msg-time {
+            font-size: 0.75rem;
+            color: #555;
+            margin-right: 0.5rem;
+        }
+
+        /* Inundatii */
+        .flood-status {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: #0f1117;
+        }
+
+        .flood-status.danger { background: #2a1515; border: 1px solid #c0392b; }
+
+        .flood-icon {
+            font-size: 1.5rem;
+        }
+
+        .flood-text {
+            font-size: 0.95rem;
+            color: #ccc;
+        }
+
+        .flood-text.danger { color: #e74c3c; font-weight: 600; }
+
+        .floods-list {
+            list-style: none;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .floods-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #2a2d3a;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        .floods-list li:last-child { border-bottom: none; }
+
+        .btn-delete {
+            background: transparent;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            flex: 0 0 auto;
+        }
+
+        .empty-msg {
+            color: #555;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .flood-card { grid-column: span 2; }
+
+        @media (max-width: 700px) {
+            .flood-card { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>&#x1F4E1; Sistem de monitorizare</h1>
+
+<div class="grid">
+
+    <!-- CARD TEMPERATURA -->
+    <div class="card">
+        <h2>Temperatura</h2>
+        <div class="temp-value" id="temperature">--<span>°C</span></div>
+    </div>
+
+    <!-- CARD LED -->
+    <div class="card">
+        <h2>Control LED</h2>
+        <div class="led-indicator">
+            <div class="led-dot" id="led-dot"></div>
+            <span class="led-label" id="led-label">Stins</span>
+        </div>
+        <div class="btn-row">
+            <button class="btn-on" onclick="controlLED('on')">Aprinde</button>
+            <button class="btn-off" onclick="controlLED('off')">Stinge</button>
+        </div>
+    </div>
+
+    <!-- CARD MESAJE -->
+    <div class="card">
+        <h2>Trimite mesaj</h2>
+        <div class="message-input-row">
+            <input type="text" id="msg-input" placeholder="Scrie un mesaj..." />
+            <button class="btn-send" onclick="sendMessage()">Trimite</button>
+        </div>
+        <ul class="messages-list" id="messages-list">
+            <li class="empty-msg">Niciun mesaj</li>
+        </ul>
+    </div>
+
+    <!-- CARD INUNDATII -->
+    <div class="card flood-card">
+        <h2>Detectie inundatii</h2>
+        <div class="flood-status" id="flood-status">
+            <span class="flood-icon">&#x1F7E2;</span>
+            <span class="flood-text" id="flood-text">Nicio inundatie detectata</span>
+        </div>
+        <ul class="floods-list" id="floods-list">
+            <li class="empty-msg">Niciun eveniment</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+    // Actualizare date la fiecare 3 secunde
+    function updateStatus() {
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                // Temperatura
+                document.getElementById('temperature').innerHTML =
+                    data.temperature + '<span>°C</span>';
+
+                // LED
+                const dot = document.getElementById('led-dot');
+                const label = document.getElementById('led-label');
+                if (data.led_status) {
+                    dot.classList.add('on');
+                    label.textContent = 'Aprins';
+                } else {
+                    dot.classList.remove('on');
+                    label.textContent = 'Stins';
+                }
+
+                // Inundatie
+                const floodStatus = document.getElementById('flood-status');
+                const floodText = document.getElementById('flood-text');
+                if (data.flood_detected) {
+                    floodStatus.classList.add('danger');
+                    floodText.textContent = 'INUNDATIE DETECTATA!';
+                    floodText.classList.add('danger');
+                } else {
+                    floodStatus.classList.remove('danger');
+                    floodText.textContent = 'Nicio inundatie detectata';
+                    floodText.classList.remove('danger');
+                }
+            })
+            .catch(err => console.error('Eroare status:', err));
+    }
+
+    // Control LED
+    function controlLED(action) {
+        fetch('/api/led/' + action, { method: 'POST' })
+            .then(r => r.json())
+            .then(() => updateStatus())
+            .catch(err => console.error('Eroare LED:', err));
+    }
+
+    // Trimite mesaj
+    function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+        .then(r => r.json())
+        .then(() => {
+            input.value = '';
+            loadMessages();
+        })
+        .catch(err => console.error('Eroare mesaj:', err));
+    }
+
+    // Permite trimiterea cu Enter
+    document.getElementById('msg-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Incarca mesaje
+    function loadMessages() {
+        fetch('/api/messages')
+            .then(r => r.json())
+            .then(messages => {
+                const list = document.getElementById('messages-list');
+                if (messages.length === 0) {
+                    list.innerHTML = '<li class="empty-msg">Niciun mesaj</li>';
+                    return;
+                }
+                list.innerHTML = messages.reverse().map(m =>
+                    `<li><span class="msg-time">${m.timestamp}</span>${m.text}</li>`
+                ).join('');
+            });
+    }
+
+    // Incarca evenimente inundatii
+    function loadFloods() {
+        fetch('/api/floods')
+            .then(r => r.json())
+            .then(floods => {
+                const list = document.getElementById('floods-list');
+                if (floods.length === 0) {
+                    list.innerHTML = '<li class="empty-msg">Niciun eveniment</li>';
+                    return;
+                }
+                list.innerHTML = floods.reverse().map(f =>
+                    `<li>
+                        <span>${f.timestamp} — Senzor: ${f.sensor_value}</span>
+                        <button class="btn-delete" onclick="deleteFlood('${f.id}')">Sterge</button>
+                    </li>`
+                ).join('');
+            });
+    }
+
+    // Sterge eveniment inundatie
+    function deleteFlood(id) {
+        fetch('/api/floods/' + id, { method: 'DELETE' })
+            .then(() => loadFloods())
+            .catch(err => console.error('Eroare stergere:', err));
+    }
+
+    // Pornire
+    updateStatus();
+    loadMessages();
+    loadFloods();
+    setInterval(updateStatus, 3000);
+    setInterval(loadMessages, 5000);
+    setInterval(loadFloods, 5000);
+</script>
+
+</body>
+</html>
