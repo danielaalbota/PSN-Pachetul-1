@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import threading
 import time
+import os
 
 # Importăm modulele noastre
 from serial_handler import connect, send_command, send_message, get_temperature, get_led_status, get_flood_status
@@ -30,15 +31,15 @@ def monitor_floods():
 
         if flood_detected and not flood_alert_sent:
             print("🚨 INUNDAȚIE DETECTATĂ!")
-            sensor_value = 1  # valoare senzor
+            sensor_value = 1
             save_flood_event(sensor_value)
             send_flood_alert(sensor_value)
             flood_alert_sent = True
 
         elif not flood_detected:
-            flood_alert_sent = False  # resetăm pentru următoarea inundație
+            flood_alert_sent = False
 
-        time.sleep(5)  # verificăm la fiecare 5 secunde
+        time.sleep(5)
 
 
 # ──────────────────────────────────────────
@@ -47,7 +48,6 @@ def monitor_floods():
 
 @app.route('/')
 def index():
-    """Pagina principală."""
     return render_template('index.html')
 
 
@@ -55,7 +55,6 @@ def index():
 
 @app.route('/api/status')
 def get_status():
-    """Returnează temperatura și statusul LED-ului ca JSON."""
     return jsonify({
         'temperature': get_temperature(),
         'led_status': get_led_status(),
@@ -67,14 +66,12 @@ def get_status():
 
 @app.route('/api/led/on', methods=['POST'])
 def led_on():
-    """Aprinde LED-ul."""
     send_command('A')
     return jsonify({'success': True, 'led_status': True})
 
 
 @app.route('/api/led/off', methods=['POST'])
 def led_off():
-    """Stinge LED-ul."""
     send_command('S')
     return jsonify({'success': True, 'led_status': False})
 
@@ -83,13 +80,11 @@ def led_off():
 
 @app.route('/api/messages', methods=['GET'])
 def get_messages():
-    """Returnează ultimele 10 mesaje."""
     return jsonify(load_messages())
 
 
 @app.route('/api/messages', methods=['POST'])
 def post_message():
-    """Trimite un mesaj nou către Arduino și îl salvează."""
     data = request.get_json()
     text = data.get('message', '').strip()
 
@@ -105,13 +100,11 @@ def post_message():
 
 @app.route('/api/floods', methods=['GET'])
 def get_floods():
-    """Returnează ultimele 10 evenimente de inundații."""
     return jsonify(load_floods())
 
 
 @app.route('/api/floods/<event_id>', methods=['DELETE'])
 def delete_flood(event_id):
-    """Șterge un eveniment de inundație după ID."""
     delete_flood_event(event_id)
     return jsonify({'success': True})
 
@@ -129,5 +122,11 @@ if __name__ == '__main__':
     flood_thread.start()
 
     # Pornim serverul Flask
-    print("🚀 Server pornit! Deschide http://localhost:5000 în browser.")
-    app.run(debug=True, use_reloader=False)
+    print("🚀 Server pornit!")
+
+    # Render oferă portul prin variabila PORT.
+    # Local va folosi automat portul 5000.
+    port = int(os.environ.get("PORT", 5000))
+
+    # Necesar pentru rulare pe Render
+    app.run(host="0.0.0.0", port=port)
