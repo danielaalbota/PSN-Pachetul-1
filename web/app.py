@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import threading
 import time
 
-# Importăm modulele noastre
+# Importăm modulele noastre.
 from serial_handler import connect, send_command, send_message, get_temperature, get_led_status, get_flood_status
 from storage import save_message, load_messages, save_flood_event, load_floods, delete_flood_event
 from email_handler import send_flood_alert
