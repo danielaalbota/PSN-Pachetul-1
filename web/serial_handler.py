@@ -30,9 +30,16 @@ def connect():
 
     try:
         arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+
         time.sleep(2)
+
+        # golim mesajul "Sistem pornit"
+        arduino.reset_input_buffer()
+
         is_connected = True
+
         print(f"✅ Conectat la Arduino pe portul {SERIAL_PORT}")
+
         return True
 
     except Exception as e:
@@ -47,7 +54,9 @@ def send_command(command):
 
     if is_connected and arduino:
         try:
+            # Arduino așteaptă ENTER la final
             arduino.write((command + '\n').encode())
+
             print(f"📤 Comandă trimisă: {command}")
 
         except Exception as e:
@@ -67,6 +76,7 @@ def send_message(message):
     if is_connected and arduino:
         try:
             arduino.write(f"MSG:{message}\n".encode())
+
             print(f"📤 Mesaj trimis: {message}")
 
         except Exception as e:
@@ -84,38 +94,55 @@ def get_temperature():
             arduino.reset_input_buffer()
 
             arduino.write(b'T\n')
+
             time.sleep(0.2)
 
             line = arduino.readline().decode().strip()
 
+            print("🌡️ TEMP RAW:", line)
+
             if line:
                 value = float(line)
+
                 simulated_data['temperature'] = value
+
                 return value
 
             return simulated_data['temperature']
 
         except Exception as e:
             print(f"❌ Eroare la citirea temperaturii: {e}")
+
             return simulated_data['temperature']
 
-    return simulated_data['temperature']
+    else:
+        simulated_data['temperature'] += 0.1
+
+        if simulated_data['temperature'] > 35:
+            simulated_data['temperature'] = 20.0
+
+        return round(simulated_data['temperature'], 1)
 
 
 def get_led_status():
     if is_connected and arduino:
         try:
+            arduino.reset_input_buffer()
+
             arduino.write(b'L\n')
+
             time.sleep(0.1)
 
             if arduino.in_waiting:
                 line = arduino.readline().decode().strip()
+
                 return line == '1'
 
             return simulated_data['led_status']
 
         except Exception as e:
             print(f"❌ Eroare la citirea statusului LED: {e}")
+
             return simulated_data['led_status']
 
     return simulated_data['led_status']
@@ -124,17 +151,22 @@ def get_led_status():
 def get_flood_status():
     if is_connected and arduino:
         try:
+            arduino.reset_input_buffer()
+
             arduino.write(b'F\n')
+
             time.sleep(0.1)
 
             if arduino.in_waiting:
                 line = arduino.readline().decode().strip()
+
                 return line == '1'
 
             return simulated_data['flood_detected']
 
         except Exception as e:
             print(f"❌ Eroare la citirea senzorului de inundație: {e}")
+
             return simulated_data['flood_detected']
 
     return simulated_data['flood_detected']
@@ -142,6 +174,7 @@ def get_flood_status():
 
 def simulate_flood(active=True):
     simulated_data['flood_detected'] = active
+
     print(
         f"🔵 [SIMULAT] Inundație: {'DETECTATĂ' if active else 'Oprită'}"
     )
